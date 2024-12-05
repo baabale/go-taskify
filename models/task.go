@@ -7,6 +7,13 @@ import (
 	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// CreateTaskDTO represents the data needed to create a new task
+type CreateTaskDTO struct {
+	Title       string `json:"title" binding:"required,min=3,max=100" example:"Complete project documentation"`
+	Description string `json:"description,omitempty" binding:"omitempty,max=500" example:"Write comprehensive documentation for the project"`
+	Status      string `json:"status,omitempty" binding:"omitempty,oneof=pending in_progress completed" example:"pending"`
+}
+
 // Task represents a task in the system
 type Task struct {
 	ID          primitive.ObjectID `json:"id" bson:"_id,omitempty"`

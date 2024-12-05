@@ -16,18 +16,19 @@ import (
 	"taskify/models"
 )
 
-// GetTasks godoc
 // @Summary Get all tasks
 // @Description Get a list of all tasks with optional filtering, pagination, and sorting
-// @Tags tasks
+// @Tags Tasks
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param status query string false "Filter by status (pending/in_progress/completed)"
-// @Param page query int false "Page number for pagination"
-// @Param limit query int false "Number of items per page"
+// @Param page query int false "Page number for pagination" default(1)
+// @Param limit query int false "Number of items per page" default(10)
 // @Param sort query string false "Sort field (created_at/-created_at)"
 // @Success 200 {array} models.TaskResponse
 // @Failure 400 {object} errors.AppError
+// @Failure 401 {object} errors.AppError "Unauthorized"
 // @Failure 500 {object} errors.AppError
 // @Router /tasks [get]
 func GetTasks(c *gin.Context) {
@@ -45,7 +46,6 @@ func GetTasks(c *gin.Context) {
 	if pageStr := c.Query("page"); pageStr != "" {
 		page, _ = strconv.Atoi(pageStr)
 	}
-	// get the limit from the query parameter or default to 10
 	limit := 10
 	if limitStr := c.Query("limit"); limitStr != "" {
 		limit, _ = strconv.Atoi(limitStr)
@@ -83,15 +83,16 @@ func GetTasks(c *gin.Context) {
 	c.JSON(http.StatusOK, tasks)
 }
 
-// CreateTask godoc
 // @Summary Create a new task
 // @Description Create a new task with the provided information
-// @Tags tasks
+// @Tags Tasks
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param task body models.CreateTaskDTO true "Task object"
 // @Success 201 {object} models.TaskResponse
 // @Failure 400 {object} errors.AppError
+// @Failure 401 {object} errors.AppError "Unauthorized"
 // @Failure 500 {object} errors.AppError
 // @Router /tasks [post]
 func CreateTask(c *gin.Context) {
@@ -127,15 +128,16 @@ func CreateTask(c *gin.Context) {
 	c.JSON(http.StatusCreated, task)
 }
 
-// GetTask godoc
 // @Summary Get a task by ID
 // @Description Get details of a specific task
-// @Tags tasks
+// @Tags Tasks
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "Task ID"
 // @Success 200 {object} models.TaskResponse
 // @Failure 400 {object} errors.AppError
+// @Failure 401 {object} errors.AppError "Unauthorized"
 // @Failure 404 {object} errors.AppError
 // @Failure 500 {object} errors.AppError
 // @Router /tasks/{id} [get]
@@ -163,16 +165,17 @@ func GetTask(c *gin.Context) {
 	c.JSON(http.StatusOK, task)
 }
 
-// UpdateTask godoc
 // @Summary Update a task
 // @Description Update a task's information
-// @Tags tasks
+// @Tags Tasks
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "Task ID"
-// @Param task body models.Task true "Task object"
+// @Param task body models.CreateTaskDTO true "Task object"
 // @Success 200 {object} models.TaskResponse
 // @Failure 400 {object} errors.AppError
+// @Failure 401 {object} errors.AppError "Unauthorized"
 // @Failure 404 {object} errors.AppError
 // @Failure 500 {object} errors.AppError
 // @Router /tasks/{id} [put]
@@ -223,15 +226,16 @@ func UpdateTask(c *gin.Context) {
 	c.JSON(http.StatusOK, task)
 }
 
-// DeleteTask godoc
 // @Summary Delete a task
 // @Description Delete a task by ID
-// @Tags tasks
+// @Tags Tasks
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "Task ID"
 // @Success 204 "No Content"
 // @Failure 400 {object} errors.AppError
+// @Failure 401 {object} errors.AppError "Unauthorized"
 // @Failure 404 {object} errors.AppError
 // @Failure 500 {object} errors.AppError
 // @Router /tasks/{id} [delete]

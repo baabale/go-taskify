@@ -1,25 +1,64 @@
 basePath: /api/v1
 definitions:
-  models.Task:
+  controllers.LoginRequest:
     properties:
-      created_at:
+      password:
+        example: password123
         type: string
+      username:
+        example: johndoe
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  controllers.RegisterRequest:
+    properties:
+      password:
+        example: password123
+        type: string
+      role:
+        enum:
+        - admin
+        - editor
+        - viewer
+        example: editor
+        type: string
+      username:
+        example: johndoe
+        type: string
+    required:
+    - password
+    - role
+    - username
+    type: object
+  errors.AppError:
+    properties:
+      err: {}
+      message:
+        type: string
+      statusCode:
+        type: integer
+    type: object
+  models.CreateTaskDTO:
+    properties:
       description:
-        type: string
-      id:
+        example: Write comprehensive documentation for the project
+        maxLength: 500
         type: string
       status:
         enum:
         - pending
         - in_progress
         - completed
+        example: pending
         type: string
       title:
-        type: string
-      updated_at:
+        example: Complete project documentation
+        maxLength: 100
+        minLength: 3
         type: string
     required:
-    - status
     - title
     type: object
   models.TaskResponse:
@@ -28,6 +67,7 @@ definitions:
         type: string
       description:
         example: Write comprehensive documentation for the Taskify project
+        maxLength: 500
         type: string
       id:
         example: 5f7b5e1b9b0b3a1b3c9b4b1a
@@ -37,17 +77,96 @@ definitions:
         type: string
       title:
         example: Complete project documentation
+        maxLength: 100
+        minLength: 3
         type: string
       updated_at:
+        type: string
+    type: object
+  models.UserResponse:
+    properties:
+      created_at:
+        type: string
+      id:
+        example: 5f7b5e1b9b0b3a1b3c9b4b1a
+        type: string
+      role:
+        example: editor
+        type: string
+      updated_at:
+        type: string
+      username:
+        example: johndoe
         type: string
     type: object
 host: localhost:3000
 info:
   contact: {}
-  description: A task management RESTful API implementation with MongoDB
+  description: A Task Management API with authentication and authorization
   title: Taskify API
   version: "1.0"
 paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Login with username and password
+      parameters:
+      - description: Login credentials
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.AppError'
+      summary: Login user
+      tags:
+      - auth
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with the provided credentials
+      parameters:
+      - description: User registration details
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/controllers.RegisterRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/models.UserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.AppError'
+      summary: Register a new user
+      tags:
+      - auth
   /tasks:
     get:
       consumes:
@@ -59,11 +178,13 @@ paths:
         in: query
         name: status
         type: string
-      - description: Page number for pagination
+      - default: 1
+        description: Page number for pagination
         in: query
         name: page
         type: integer
-      - description: Number of items per page
+      - default: 10
+        description: Number of items per page
         in: query
         name: limit
         type: integer
@@ -80,9 +201,23 @@ paths:
             items:
               $ref: '#/definitions/models.TaskResponse'
             type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.AppError'
+      security:
+      - BearerAuth: []
       summary: Get all tasks
       tags:
-      - tasks
+      - Tasks
     post:
       consumes:
       - application/json
@@ -93,7 +228,7 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/models.Task'
+          $ref: '#/definitions/models.CreateTaskDTO'
       produces:
       - application/json
       responses:
@@ -101,9 +236,23 @@ paths:
           description: Created
           schema:
             $ref: '#/definitions/models.TaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.AppError'
+      security:
+      - BearerAuth: []
       summary: Create a new task
       tags:
-      - tasks
+      - Tasks
   /tasks/{id}:
     delete:
       consumes:
@@ -120,9 +269,27 @@ paths:
       responses:
         "204":
           description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.AppError'
+      security:
+      - BearerAuth: []
       summary: Delete a task
       tags:
-      - tasks
+      - Tasks
     get:
       consumes:
       - application/json
@@ -140,9 +307,27 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.TaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.AppError'
+      security:
+      - BearerAuth: []
       summary: Get a task by ID
       tags:
-      - tasks
+      - Tasks
     put:
       consumes:
       - application/json
@@ -158,7 +343,7 @@ paths:
         name: task
         required: true
         schema:
-          $ref: '#/definitions/models.Task'
+          $ref: '#/definitions/models.CreateTaskDTO'
       produces:
       - application/json
       responses:
@@ -166,7 +351,31 @@ paths:
           description: OK
           schema:
             $ref: '#/definitions/models.TaskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/errors.AppError'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/errors.AppError'
+      security:
+      - BearerAuth: []
       summary: Update a task
       tags:
-      - tasks
+      - Tasks
+securityDefinitions:
+  BearerAuth:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

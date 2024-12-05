@@ -4,19 +4,32 @@ import (
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
-	"gorm.io/gorm"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
+// User represents a user in the system
 type User struct {
-	ID        uint      `json:"id" gorm:"primaryKey"`
-	Username  string    `json:"username" gorm:"unique;not null"`
-	Password  string    `json:"-" gorm:"not null"`  // "-" means this field won't be included in JSON
-	Role      string    `json:"role" gorm:"not null"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID        primitive.ObjectID `json:"id" bson:"_id,omitempty"`
+	Username  string            `json:"username" bson:"username" binding:"required"`
+	Password  string            `json:"-" bson:"password" binding:"required"`  // "-" means this field won't be included in JSON
+	Role      string            `json:"role" bson:"role" binding:"required,oneof=admin editor viewer"`
+	CreatedAt time.Time         `json:"created_at" bson:"created_at"`
+	UpdatedAt time.Time         `json:"updated_at" bson:"updated_at"`
 }
 
-// HashPassword hashes the user's password before saving
+// NewUser creates a new user with default values
+func NewUser(username, password, role string) *User {
+	now := time.Now()
+	return &User{
+		Username:  username,
+		Password:  password,
+		Role:      role,
+		CreatedAt: now,
+		UpdatedAt: now,
+	}
+}
+
+// HashPassword hashes the user's password
 func (u *User) HashPassword() error {
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(u.Password), bcrypt.DefaultCost)
 	if err != nil {
@@ -27,11 +40,16 @@ func (u *User) HashPassword() error {
 }
 
 // CheckPassword verifies the provided password against the hashed password
-func (u *User) CheckPassword(password string) error {
-	return bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+func (u *User) CheckPassword(password string) bool {
+	err := bcrypt.CompareHashAndPassword([]byte(u.Password), []byte(password))
+	return err == nil
 }
 
-// BeforeCreate is a GORM hook that runs before creating a new user
-func (u *User) BeforeCreate(tx *gorm.DB) error {
-	return u.HashPassword()
+// swagger:model User
+type UserResponse struct {
+	ID        string    `json:"id" example:"5f7b5e1b9b0b3a1b3c9b4b1a"`
+	Username  string    `json:"username" example:"johndoe"`
+	Role      string    `json:"role" example:"editor" enum:"admin,editor,viewer"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
