@@ -1,58 +1,52 @@
 package main
 
 import (
-	"fmt"
 	"log"
 
+	"github.com/casbin/casbin/v2"
 	"github.com/gin-gonic/gin"
-	swaggerFiles "github.com/swaggo/files"
-	ginSwagger "github.com/swaggo/gin-swagger"
 
-	"taskify/config"
-	_ "taskify/docs" // This is required for swagger
-	"taskify/middleware"
-	"taskify/routes"
-	"taskify/utils"
+	"github.com/baabale/go-taskify/config"
+	"github.com/baabale/go-taskify/controllers"
+	"github.com/baabale/go-taskify/middleware"
+	"github.com/baabale/go-taskify/models"
 )
 
-// @title           Taskify API
-// @version         1.0
-// @description     A task management RESTful API implementation with MongoDB
-// @host           localhost:3000
-// @BasePath       /api/v1
-
 func main() {
-	// Initialize validator
-	utils.InitValidator()
+	// Initialize configuration
+	db := config.InitDB()
 
-	// Load configuration from environment variables
-	if err := config.LoadConfig(); err != nil {
-		log.Fatal("Configuration error:", err)
+	// Auto migrate the schema
+	db.AutoMigrate(&models.Task{}, &models.User{})
+
+	// Initialize Casbin enforcer
+	enforcer, err := casbin.NewEnforcer("config/model.conf", "config/policy.csv")
+	if err != nil {
+		log.Fatal("Failed to initialize Casbin enforcer:", err)
 	}
 
-	// Initialize MongoDB connection
-	config.ConnectDatabase()
+	// Initialize controllers
+	taskController := controllers.NewTaskController(db)
+	authController := controllers.NewAuthController(db)
 
-	// Set Gin mode based on environment
-	if config.AppConfig.Environment == "production" {
-		gin.SetMode(gin.ReleaseMode)
-	}
-
+	// Create Gin router
 	r := gin.Default()
 
-	// Add middleware
-	r.Use(middleware.ErrorHandler())
+	// Public routes
+	r.POST("/register", authController.Register)
+	r.POST("/login", authController.Login)
 
-	// Register routes
-	routes.RegisterRoutes(r)
-
-	// Swagger documentation endpoint
-	r.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
-
-	// Start server with configured host and port
-	serverAddr := fmt.Sprintf("%s:%s", config.AppConfig.ServerAddress, config.AppConfig.ServerPort)
-	log.Printf("Server starting on %s in %s mode", serverAddr, config.AppConfig.Environment)
-	if err := r.Run(serverAddr); err != nil {
-		log.Fatal("Failed to start server:", err)
+	// Protected routes
+	api := r.Group("/")
+	api.Use(middleware.AuthMiddleware())
+	api.Use(middleware.PermissionMiddleware(enforcer))
+	{
+		api.GET("/tasks", taskController.GetTasks)
+		api.GET("/tasks/:id", taskController.GetTask)
+		api.POST("/tasks", taskController.CreateTask)
+		api.PUT("/tasks/:id", taskController.UpdateTask)
+		api.DELETE("/tasks/:id", taskController.DeleteTask)
 	}
+
+	r.Run(":8080")
 }
