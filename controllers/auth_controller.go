@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +10,6 @@ import (
 
 	"taskify/config"
 	"taskify/errors"
-	"taskify/middleware"
 	"taskify/models"
 )
 
@@ -92,15 +90,22 @@ func Register(c *gin.Context) {
 	})
 }
 
-// Login handles user login
+// @Summary Login user
+// @Description Login with username and password
+// @Tags auth
+// @Accept json
+// @Produce json
+// @Param credentials body LoginRequest true "Login credentials"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400 {object} errors.AppError
+// @Failure 401 {object} errors.AppError
+// @Router /auth/login [post]
 func Login(c *gin.Context) {
 	var req LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.Error(errors.NewInvalidInput(err.Error()))
 		return
 	}
-
-	fmt.Println("Login request received:")
 
 	collection := config.DB.Collection("users")
 	ctx := context.Background()
@@ -124,7 +129,7 @@ func Login(c *gin.Context) {
 	}
 
 	// Generate token
-	token, err := middleware.GenerateToken(user.Username, user.Role)
+	token, err := GenerateToken(user.Username, user.Role)
 	if err != nil {
 		c.Error(errors.NewInternalError(err))
 		return
@@ -133,4 +138,11 @@ func Login(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
 	})
+}
+
+// GenerateToken generates a JWT token for authentication
+func GenerateToken(username, role string) (string, error) {
+	// Implement your token generation logic here
+	// This is a placeholder implementation
+	return "", nil
 }

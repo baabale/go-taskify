@@ -40,7 +40,7 @@ func LoadConfig() error {
 	// Set configuration values
 	AppConfig = Config{
 		Environment:   env,
-		MongoURI:      getEnv("MONGO_URI", "mongodb://localhost:27017"),
+		MongoURI:      getEnv("MONGODB_URI", "mongodb://mongodb:27017"),
 		DatabaseName:  getEnv("DB_NAME", "taskify"),
 		ServerPort:    getEnv("SERVER_PORT", "3000"),
 		ServerAddress: getEnv("SERVER_ADDRESS", "localhost"),

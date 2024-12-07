@@ -1,28 +1,39 @@
-# Environment variables
-.env
-
-# IDE specific files
-.idea/
-.vscode/
-
 # Binaries for programs and plugins
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
+main
 
-# Test binary, built with `go test -c`
+# Environment files
+.env
+.env.*
+
+# MongoDB data
+data/
+
+# IDE specific files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
+
+# Docker volumes
+mongodb_data/
+
+# Log files
+*.log
+
+# Test binary, built with 'go test -c'
 *.test
 
-# Output of the go coverage tool, specifically when used with LiteIDE
+# Output of the go coverage tool
 *.out
 
-# Dependency directories (remove the comment below to include it)
-vendor/
-
-# Go workspace file
-go.work
-
-instructions.md
-# instructions2.md
+# AWS Keys
+*.pem

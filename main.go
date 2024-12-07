@@ -19,8 +19,8 @@ import (
 // @title           Taskify API
 // @version         1.0
 // @description     A Task Management API with authentication and authorization
-// @host           localhost:3000
-// @BasePath       /api/v1
+// @host            localhost:3000
+// @BasePath        /api/v1
 
 // @securityDefinitions.apikey BearerAuth
 // @in header
